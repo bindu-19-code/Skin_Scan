@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+pymongo
+python-multipart
+pillow
+tensorflow   # later for model

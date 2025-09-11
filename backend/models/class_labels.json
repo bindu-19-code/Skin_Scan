@@ -1,0 +1,126 @@
+[
+    {
+        "name": "Acne",
+        "description": "Acne is a common skin condition characterized by pimples, blackheads, whiteheads, and sometimes cysts. It often occurs on the face, back, and chest and can be influenced by hormones, diet, and stress."
+    },
+    {
+        "name": "Acne & Rosacea",
+        "description": "This category includes acne as well as rosacea, which causes facial redness, visible blood vessels, and sometimes acne-like bumps."
+    },
+    {
+        "name": "Actinic Keratosis / Skin Cancer",
+        "description": "Precancerous lesions and malignant skin tumors caused by sun damage, including basal cell carcinoma and squamous cell carcinoma."
+    },
+    {
+        "name": "Atopic Dermatitis",
+        "description": "A chronic inflammatory skin condition causing itchy, red, and dry patches, often linked to allergies or genetic factors."
+    },
+    {
+        "name": "Bullous Disease",
+        "description": "Rare disorders causing large, fluid-filled blisters, which can be inherited or autoimmune."
+    },
+    {
+        "name": "Carcinoma",
+        "description": "Malignant skin tumors that can grow and spread if untreated."
+    },
+    {
+        "name": "Bacterial Infections",
+        "description": "Skin infections caused by bacteria such as cellulitis, impetigo, and folliculitis."
+    },
+    {
+        "name": "Eczema",
+        "description": "Red, itchy, and inflamed skin patches that may ooze or crust, commonly triggered by allergies or irritants."
+    },
+    {
+        "name": "Eczema",
+        "description": "Red, itchy, and inflamed skin patches that may ooze or crust, commonly triggered by allergies or irritants."
+    },
+    {
+        "name": "Drug Eruptions",
+        "description": "Skin reactions resulting from medications, often appearing as rashes, hives, or blisters."
+    },
+    {
+        "name": "HAM10000 Part 1",
+        "description": "Part of the HAM10000 dataset for various skin lesions."
+    },
+    {
+        "name": "HAM10000 Part 2",
+        "description": "Continuation of the HAM10000 dataset for skin lesion classification."
+    },
+    {
+        "name": "Hair Loss / Alopecia",
+        "description": "Conditions leading to hair thinning, bald patches, or total hair loss due to genetics, autoimmune issues, or other causes."
+    },
+    {
+        "name": "Herpes / HPV / STDs",
+        "description": "Viral infections affecting skin or mucous membranes, including herpes simplex, HPV warts, and other sexually transmitted diseases."
+    },
+    {
+        "name": "Keratosis",
+        "description": "Thickened, scaly skin patches that can be benign or precancerous."
+    },
+    {
+        "name": "Pigmentation Disorders",
+        "description": "Changes in skin color including hypopigmentation, hyperpigmentation, or light/dark spots."
+    },
+    {
+        "name": "Lupus / Connective Tissue",
+        "description": "Autoimmune disorders affecting skin, causing rashes, lesions, and systemic symptoms."
+    },
+    {
+        "name": "Melanoma / Nevi / Moles",
+        "description": "Abnormal or cancerous moles and skin lesions requiring careful monitoring."
+    },
+    {
+        "name": "Milia",
+        "description": "Small white cysts commonly appearing on the face, especially around eyes and cheeks."
+    },
+    {
+        "name": "Nail Diseases",
+        "description": "Fungal infections or other nail disorders causing discoloration, thickening, or brittleness."
+    },
+    {
+        "name": "Contact Dermatitis",
+        "description": "Skin inflammation caused by contact with irritants or allergens such as poison ivy or chemicals."
+    },
+    {
+        "name": "Psoriasis / Lichen Planus",
+        "description": "Chronic inflammatory skin diseases causing thick, scaly patches and redness."
+    },
+    {
+        "name": "Rosacea",
+        "description": "Facial redness, visible blood vessels, and sometimes acne-like bumps, often triggered by heat or stress."
+    },
+    {
+        "name": "Infestations / Bites",
+        "description": "Skin reactions caused by insect bites, ticks, scabies, or other parasitic infestations."
+    },
+    {
+        "name": "Seborrheic Keratoses",
+        "description": "Noncancerous skin growths that appear waxy, wart-like, or slightly raised, common in older adults."
+    },
+    {
+        "name": "Systemic Disease",
+        "description": "Skin symptoms that occur as a result of internal diseases or systemic conditions."
+    },
+    {
+        "name": "Fungal Infections",
+        "description": "Skin infections caused by fungi such as ringworm, athlete\u2019s foot, or candidiasis."
+    },
+    {
+        "name": "Urticaria / Hives",
+        "description": "Raised, itchy welts on the skin caused by allergic reactions or other triggers."
+    },
+    {
+        "name": "Vascular Tumors",
+        "description": "Abnormal growths of blood vessels in the skin, sometimes congenital or benign."
+    },
+    {
+        "name": "Vasculitis",
+        "description": "Inflammation of blood vessels leading to red or purple skin lesions and potential systemic involvement."
+    },
+    {
+        "name": "Warts / Viral Infections",
+        "description": "Viral infections causing warts, molluscum, or other lesions on skin."
+    }
+]
