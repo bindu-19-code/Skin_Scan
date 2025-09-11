@@ -19,3 +19,4 @@ backend/dataset/
 
 backend/ham10000
 
+backend/__pycache__/
