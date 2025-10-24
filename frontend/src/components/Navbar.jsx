@@ -1,27 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 function Navbar({ isLoggedIn }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
   return (
     <nav className="navbar">
-      <h2 className="logo">SkinScan</h2>
-      <ul className="nav-links">
-        <li><Link to="/">Home</Link></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#howitworks">How It Works</a></li>
+      <div className="navbar-container">
+        <h2 className="logo">SkinScan</h2>
 
-        {!isLoggedIn ? (
-          <>
-            <li><Link to="/login">Login</Link></li>
-            <li><Link to="/register">Register</Link></li>
-          </>
-        ) : (
-          <>
-            <li><Link to="/disease-detection">Disease Detection</Link></li>
-            <li><Link to="/profile">Profile</Link></li>
-          </>
-        )}
-      </ul>
+        {/* Hamburger for mobile */}
+        <div className="hamburger" onClick={toggleMenu}>
+          <div className={`bar ${menuOpen ? "bar1" : ""}`}></div>
+          <div className={`bar ${menuOpen ? "bar2" : ""}`}></div>
+          <div className={`bar ${menuOpen ? "bar3" : ""}`}></div>
+        </div>
+
+        <ul className={`nav-links ${menuOpen ? "active" : ""}`}>
+          <li><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link></li>
+          <li><a href="#features" onClick={() => setMenuOpen(false)}>Features</a></li>
+          <li><a href="#howitworks" onClick={() => setMenuOpen(false)}>How It Works</a></li>
+
+          {!isLoggedIn ? (
+            <>
+              <li><Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link></li>
+              <li><Link to="/register" onClick={() => setMenuOpen(false)}>Register</Link></li>
+            </>
+          ) : (
+            <>
+              <li><Link to="/disease-detection" onClick={() => setMenuOpen(false)}>Disease Detection</Link></li>
+              <li><Link to="/profile" onClick={() => setMenuOpen(false)}>Profile</Link></li>
+            </>
+          )}
+        </ul>
+      </div>
     </nav>
   );
 }

@@ -1,17 +1,40 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Login({ setIsLoggedIn }) {
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (phone.trim().length === 10) {
-      setIsLoggedIn(true);
-      navigate("/profile");
-    } else {
-      alert("Enter valid 10-digit phone number");
+
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await axios.post("http://localhost:5000/login", {
+        email,
+        password,
+      });
+
+      if (res.status === 200) {
+        alert("Login successful!");
+        setIsLoggedIn(true); // update app state
+        navigate("/");       // redirect to Home page
+      } else {
+        alert(res.data.message || "Login failed. Check your email or password.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Login failed. Check your email or password.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -20,12 +43,22 @@ function Login({ setIsLoggedIn }) {
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
         <input
-          type="tel"
-          placeholder="Phone Number"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
         />
-        <button type="submit">Login</button>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
+        </button>
       </form>
     </div>
   );
