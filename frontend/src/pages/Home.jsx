@@ -22,13 +22,12 @@ function Home() {
     <div className="home-container">
       {/* Hero Section */}
       <div className="hero-section">
-        <span className="tag">⚡ AI-Powered Dermatology</span>
+        <span/>
         <h1 className="hero-title">
           Advanced <span>Skin Disease</span> Detection
         </h1>
         <p className="hero-subtitle">
-          Upload an image of your skin condition and get instant AI-powered insights 
-          with confidence levels, severity analysis, and personalized treatment recommendations.
+          Upload an image of your skin condition and get instant AI-powered insights.
         </p>
 
         <div className="hero-image-card">
@@ -93,13 +92,13 @@ function Home() {
         <div className="howitworks-grid">
           <div className="step-card">
             <div className="step-badge">1</div>
-            <img src="/images/focus.png" alt="Take a photo" />
+            <img src="/images/focus.png" alt="Capture" />
             <h3>Take a Photo</h3>
             <p>Zoom in close (less than 10 cm), keep it focused, and center only the skin mark — avoid hair, wrinkles, and background objects.</p>
           </div>
           <div className="step-card">
             <div className="step-badge">2</div>
-            <img src="/images/image-upload.png" alt="Upload photo" />
+            <img src="/images/image-upload.png" alt="Upload" />
             <h3>Upload & Analyze</h3>
             <p>Upload your photo to our AI system. It will process the image and run advanced skin disease detection instantly.</p>
           </div>

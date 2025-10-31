@@ -7,7 +7,7 @@ function Footer() {
       <div className="footer-container">
         <div className="footer-section">
           <h3>SkinScan</h3>
-          <p>AI-powered dermatology platform helping you detect and track skin conditions with confidence.</p>
+          <p>AI-powered dermatology platform helping you detect and track skin conditions.</p>
         </div>
 
         <div className="footer-section">
