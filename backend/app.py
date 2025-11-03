@@ -11,9 +11,16 @@ from dotenv import load_dotenv
 from flask_mail import Mail, Message
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-from openai import OpenAI
+import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import tempfile
+import requests
+from flask import request, jsonify
+from models import User
+from flask_pymongo import PyMongo
+from bson.objectid import ObjectId
+from werkzeug.security import check_password_hash
+
 
 # ====================================
 # Load environment variables
@@ -21,9 +28,20 @@ import tempfile
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={
+    r"/*": {
+        "origins": "http://localhost:3000",
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Configure with your key
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# List all models available
+for model in genai.list_models():
+    print(model.name)
 
 # ====================================
 # ML Model
@@ -74,9 +92,10 @@ def assess_risk(skin_type="III", age=30, history=False, uv_exposure=10):
 # MongoDB setup
 # ====================================
 MONGO_URI = os.environ.get("MONGO_URI")
-client = MongoClient(MONGO_URI)
-db = client["my_app"]
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client["my_app"]
 users_col = db["users"]
+history_collection = db["history"]
 
 # ====================================
 # Email setup
@@ -162,11 +181,30 @@ def login():
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
+
     user = users_col.find_one({"email": email})
+
     if user and user.get("password") == password:
-        return jsonify({"message": "Login successful"}), 200
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "email": user["email"],
+        }), 200
+
     return jsonify({"message": "Invalid email or password"}), 401
 
+@app.route("/api/profile", methods=["GET"])
+def get_profile():
+    email = request.args.get("email")
+    if not email:
+        return jsonify({"error": "Email parameter missing"}), 400
+
+    user = users_col.find_one({"email": email}, {"_id": 0})
+    
+    if user:
+        return jsonify(user), 200
+    else:
+        return jsonify({"error": "User not found"}), 404
 
 # ====================================
 # Update & Get Profile
@@ -197,13 +235,13 @@ def update_user():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/get-user", methods=["GET"])
-def get_user():
-    email = request.args.get("email")
-    user = users_col.find_one({"email": email}, {"_id": 0})
+@app.route("/api/user/<email>", methods=["GET"])
+def get_user(email):
+    user = users_col.find_one({"email": email}, {"_id": 0, "password": 0})
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
     return jsonify(user), 200
+
 
 
 # ====================================
@@ -228,25 +266,21 @@ def predict():
         severity = analyze_severity(img_array[0])
         risk = assess_risk()
 
-        # 🧠 Ask OpenAI for suggestions
+        # 🧠 Ask Gemini for AI suggestions
         try:
             prompt = f"""
             You are a dermatology assistant AI.
-            Provide 3 short, safe and practical self-care suggestions for a skin disease.
+            Provide 3 short, safe, and practical self-care suggestions for a skin disease.
             Disease: {predicted_class}
             Severity: {severity}
             Avoid giving harmful medical advice or prescribing medications.
             Each suggestion should be one line.
             """
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=150,
-                temperature=0.7
-            )
+            model_ai = genai.GenerativeModel("gemini-2.5-pro")
+            response = model_ai.generate_content(prompt)
 
-            suggestions_text = response.choices[0].message.content.strip()
+            suggestions_text = response.text.strip()
             suggestions = [s.strip("•- \n") for s in suggestions_text.split("\n") if s.strip()]
 
         except Exception as ai_error:
@@ -257,6 +291,7 @@ def predict():
                 "Consult a dermatologist if symptoms persist."
             ]
 
+        # ✅ Final result object
         result = {
             "predicted_class": predicted_class,
             "confidence": confidence,
@@ -266,6 +301,14 @@ def predict():
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
+        # Save to MongoDB (optional)
+        if email:
+            users_col.update_one(
+                {"email": email},
+                {"$push": {"detection_history": result}},
+                upsert=True
+            )
+
         return jsonify(result)
 
     except Exception as e:
@@ -273,24 +316,84 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 
-        if email:
-            users_col.update_one(
-                {"email": email},
-                {"$push": {"detection_history": result}},
-                upsert=True
-            )
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 @app.route("/get-history", methods=["GET"])
 def get_history():
     email = request.args.get("email")
-    user = users_col.find_one({"email": email}, {"_id": 0, "detection_history": 1})
-    if not user or "detection_history" not in user:
-        return jsonify({"history": []}), 200
-    return jsonify({"history": user["detection_history"]}), 200
+    if not email:
+        return jsonify([])
+
+    history = list(db.history.find({"email": email}, {"_id": 0}))
+    return jsonify(history)
+
+@app.route('/save-history', methods=['POST'])
+def save_history():
+    data = request.get_json()
+    email = data.get("email")
+    disease = data.get("disease")
+    severity = data.get("severity")
+
+    if not email or not disease:
+        return jsonify({"message": "Missing fields"}), 400
+
+    history_entry = {
+        "email": email,
+        "predicted_class": disease,
+        "severity": severity,
+        "timestamp": datetime.utcnow()
+    }
+
+    db.history.insert_one(history_entry)
+    return jsonify({"message": "History saved successfully"}), 200
+
+@app.route("/find-dermatologists", methods=["GET"])
+def find_dermatologists():
+    city = request.args.get("city", "")
+
+    if not city:
+        return jsonify({"error": "City parameter is required"}), 400
+
+    # 1️⃣ Convert city to lat/lon using Nominatim
+    geo_url = f"https://nominatim.openstreetmap.org/search?format=json&q={city}"
+    geo_res = requests.get(geo_url, headers={"User-Agent": "Mozilla/5.0"}).json()
+
+    if not geo_res:
+        return jsonify({"error": "City not found"}), 404
+
+    lat = geo_res[0]["lat"]
+    lon = geo_res[0]["lon"]
+
+    # 2️⃣ Query Overpass API for all doctors within 10km
+    overpass_url = "https://overpass-api.de/api/interpreter"
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    query = f"""
+    [out:json];
+    (
+      node["amenity"="doctors"](around:20000,{lat},{lon});
+      node["amenity"="clinic"](around:20000,{lat},{lon});
+      node["amenity"="hospital"](around:20000,{lat},{lon});
+    );
+    out body;
+    """
+
+    overpass_res = requests.post(overpass_url, data=query, headers=headers).json()
+
+    results = []
+    keywords = ["derma", "skin", "cosmetic", "hair"]
+
+    for element in overpass_res.get("elements", []):
+        tags = element.get("tags", {})
+        name = tags.get("name", "").lower()
+
+        if any(k in name for k in keywords):
+            results.append({
+                "name": tags.get("name", "Doctor"),
+                "address": tags.get("addr:street", "") + ", " + city,
+                "lat": element.get("lat"),
+                "lon": element.get("lon"),
+            })
+
+    return jsonify(results)
 
 
 # ====================================
@@ -382,16 +485,6 @@ def reset_password():
         print("Error resetting password:", e)
         return jsonify({"error": str(e)}), 500
 
-
-# ====================================
-# CORS Fix
-# ====================================
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE')
-    return response
 
 
 # ====================================

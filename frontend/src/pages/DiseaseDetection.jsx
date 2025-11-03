@@ -12,17 +12,17 @@ function DiseaseDetection() {
   const [profile, setProfile] = useState(null);
 
   // Fetch user profile info (assuming JWT or userId stored)
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/profile");
-        setProfile(response.data);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      }
-    };
-    fetchProfile();
-  }, []);
+useEffect(() => {
+  const email = localStorage.getItem("email");
+  if (!email) return;
+
+  axios.get(`http://127.0.0.1:5000/api/profile?email=${email}`)
+    .then(res => {
+      console.log("Profile:", res.data);
+      setProfile(res.data);
+    })
+    .catch(err => console.error("Profile fetch error:", err));
+}, []);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -54,6 +54,21 @@ function DiseaseDetection() {
       console.log("✅ Backend response:", response.data);
 
       if (response.data && response.data.predicted_class) {
+        // ✅ Save detection history after successful prediction
+      const email = localStorage.getItem("email");
+
+      if (email) {
+        try {
+          await axios.post("http://127.0.0.1:5000/save-history", {
+            email: email,
+            disease: response.data.predicted_class.name,
+            severity: response.data.severity || null
+          });
+          console.log("History saved!");
+        } catch (historyErr) {
+          console.error("Error saving history:", historyErr);
+        }
+      }
         setResult({
           name: response.data.predicted_class.name,
           description: response.data.predicted_class.description,
@@ -78,64 +93,87 @@ function DiseaseDetection() {
   };
 
   // Search dermatologists in entered location
-  const handleSearchDermatologists = async () => {
-    if (!location) return;
-
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=dermatologists+in+${location}&key=YOUR_GOOGLE_MAPS_API_KEY`
-      );
-      const results = response.data.results || [];
-      setDermatologists(results);
-    } catch (err) {
-      console.error("Error fetching dermatologists:", err);
-      setError("Could not fetch dermatologist data.");
-    }
-  };
+const handleSearchDermatologists = async () => {
+  if (!location) return;
+  
+  try {
+    const response = await axios.get(
+      `http://127.0.0.1:5000/find-dermatologists?city=${location}`
+    );
+    console.log("Dermatologists:", response.data);
+    setDermatologists(response.data);
+  } catch (err) {
+    console.error("Error fetching dermatologists:", err);
+    setError("Could not fetch dermatologist data.");
+  }
+};
 
   // Download PDF Report
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    let y = 10;
+const handleDownloadPDF = () => {
+  const doc = new jsPDF();
+  let y = 10;
 
-    doc.setFontSize(18);
-    doc.text("Disease Detection Report", 10, y);
-    y += 10;
+  doc.setFontSize(18);
+  doc.text("Skin Disease Detection Report", 10, y);
+  y += 12;
 
-    doc.setFontSize(12);
-    if (profile) {
-      doc.text(`Name: ${profile.name}`, 10, (y += 8));
-      doc.text(`Email: ${profile.email}`, 10, (y += 8));
-    }
+  doc.setFontSize(13);
+  doc.text("Patient Details:", 10, (y += 8));
 
-    if (selectedFile) {
-      doc.text(`Uploaded Image: ${selectedFile.name}`, 10, (y += 8));
-    }
+  if (profile) {
+    const fields = [
+      `Name: ${profile.name || "N/A"}`,
+      `Email: ${profile.email || "N/A"}`,
+      `Phone: ${profile.contact || "N/A"}`,
+      `Age: ${profile.age || "N/A"}`,
+      `Gender: ${profile.gender || "N/A"}`,
+      `Address: ${profile.address || "N/A"}`,
+      `Medical History: ${profile.familyHistory || "N/A"}`
+    ];
 
-    if (result) {
-      doc.text(`Disease: ${result.name}`, 10, (y += 10));
-      doc.text(`Severity: ${result.severity}`, 10, (y += 8));
-      doc.text(`Description:`, 10, (y += 8));
-      doc.text(doc.splitTextToSize(result.description, 180), 10, (y += 8));
-      doc.text(`Suggestions:`, 10, (y += 8));
-      result.suggestions.forEach((s, i) => {
-        doc.text(`- ${s}`, 12, (y += 8));
-      });
-    }
+    fields.forEach((field) => {
+      doc.text(field, 10, (y += 8));
+    });
 
-    // Optional: add uploaded image preview in PDF
-    if (selectedFile) {
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        const imgData = event.target.result;
-        doc.addImage(imgData, "JPEG", 140, 20, 50, 50);
-        doc.save("Disease_Report.pdf");
-      };
-      reader.readAsDataURL(selectedFile);
-    } else {
-      doc.save("Disease_Report.pdf");
-    }
-  };
+    y += 5;
+  }
+
+  if (result) {
+    doc.setFontSize(13);
+    doc.text("Diagnosis Details:", 10, (y += 10));
+    doc.text(`Disease: ${result.name}`, 10, (y += 8));
+    doc.text(`Severity: ${result.severity}`, 10, (y += 8));
+
+    doc.text("Description:", 10, (y += 8));
+    doc.setFontSize(11);
+    const splitDesc = doc.splitTextToSize(result.description, 180);
+    doc.text(splitDesc, 10, (y += 8));
+    y += splitDesc.length * 4;
+
+    doc.setFontSize(13);
+    doc.text("Doctor Suggestions:", 10, (y += 10));
+    doc.setFontSize(11);
+
+    result.suggestions.forEach((s) => {
+      const clean = s.replace(/^\* ?/, "");
+      const splitText = doc.splitTextToSize(`- ${clean}`, 180);
+      doc.text(splitText, 12, (y += 8));
+      y += splitText.length * 4;
+    });
+  }
+
+  // Include uploaded image
+  if (selectedFile) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      doc.addImage(event.target.result, "JPEG", 145, 20, 50, 50);
+      doc.save("Skin_Disease_Report.pdf");
+    };
+    reader.readAsDataURL(selectedFile);
+  } else {
+    doc.save("Skin_Disease_Report.pdf");
+  }
+};
 
 return (
   <div className="disease-detection-container">
@@ -169,7 +207,7 @@ return (
   <div>
     <ul>
       {result.suggestions.map((s, i) => (
-        <li key={i}>{s}</li>
+        <li key={i}>{s.replace(/^\* ?/, '')}</li>
       ))}
     </ul>
   </div>
@@ -189,15 +227,25 @@ return (
       />
       <button onClick={handleSearchDermatologists}>Search</button>
 
-      {dermatologists.length > 0 && (
-        <ul>
-          {dermatologists.map((d, index) => (
-            <li key={index}>
-              <b>{d.name}</b> — {d.formatted_address}
-            </li>
-          ))}
-        </ul>
-      )}
+{dermatologists.length > 0 ? (
+  <ul>
+    {dermatologists.map((d, index) => (
+      <li key={index}>
+        <b>{d.name}</b><br />
+         <p>{d.address.replace(/^,\s*/, "")}</p><br />
+         <a 
+             href={`https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`} 
+             target="_blank" 
+             rel="noopener noreferrer"
+           >
+            View on Map
+           </a>
+      </li>
+    ))}
+  </ul>
+) : (
+  <p>No dermatologists found. Try a different location.</p>
+)}
     </div>
   </div>
 );

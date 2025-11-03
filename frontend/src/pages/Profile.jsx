@@ -1,14 +1,13 @@
 // src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ Added useLocation import
+import { useLocation } from "react-router-dom"; // ✅ Added useLocation import
 import "../App.css";
 
-function Profile({ userEmail, setIsLoggedIn }) {
-  const navigate = useNavigate();
+function Profile({ userEmail }) {
   const location = useLocation(); // ✅ Added this
   const [activeTab, setActiveTab] = useState("info");
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [history, setHistory] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -99,62 +98,84 @@ useEffect(() => {
 };
 
   // ✅ Fetch profile info
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!userEmail) return;
-      try {
-        setLoading(true);
-        const res = await axios.get(`http://localhost:5000/get-user?email=${userEmail}`);
-        if (res.data) setProfileData(res.data);
-      } catch (err) {
-        console.error(err);
-        alert("Failed to fetch profile data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [userEmail]);
+useEffect(() => {
+  const email = localStorage.getItem("email");
+  if (!email) return;
+
+  fetch(`http://localhost:5000/api/user/${email}`)
+    .then(res => res.json())
+    .then(data => {
+      setProfileData({
+        name: data.name || "",
+        email: data.email || "",
+        contact: data.contact || "",
+        age: data.age || "",
+        dob: data.dob || "",
+        gender: data.gender || "",
+        address: data.address || "",
+        familyHistory: data.familyHistory || ""
+      });
+    })
+    .catch(err => console.error(err));
+}, []);
+
 
   // ✅ Fetch detection history
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!userEmail) return;
-      try {
-        const res = await axios.get(`http://localhost:5000/get-history?email=${userEmail}`);
-        if (res.data && Array.isArray(res.data)) setHistory(res.data);
-      } catch (err) {
-        console.error("Error fetching history:", err);
+useEffect(() => {
+  const email = localStorage.getItem("email");
+  if (!email) {
+    console.error("No email found in localStorage");
+    return;
+  }
+
+  fetch(`http://127.0.0.1:5000/get-history?email=${email}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (Array.isArray(data)) {
+        setHistory(data);
+      } else {
+        setHistory([]);
       }
-    };
-    fetchHistory();
-  }, [userEmail]);
+    })
+    .catch((err) => console.error("Error fetching history:", err));
+}, []);
 
   const handleInputChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.post("http://localhost:5000/update-user", profileData);
-      if (res.status === 200) {
-        alert("Profile updated successfully!");
-        setIsEditing(false);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
+const handleSave = async () => {
+  const storedEmail = localStorage.getItem("email");
+  if (!storedEmail) {
+    alert("User not logged in");
+    return;
+  }
+
+  const bodyData = {
+    email: storedEmail,
+    name: profileData.name,
+    contact: profileData.contact,
+    age: profileData.age,
+    dob: profileData.dob,
+    gender: profileData.gender,
+    address: profileData.address,
+    familyHistory: profileData.familyHistory
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    navigate("/");
-  };
+  try {
+    await axios.post("http://localhost:5000/update-user", bodyData);
+    alert("Profile updated successfully!");
+    setIsEditing(false);
+  } catch (err) {
+    console.error(err.response);
+    alert(err.response?.data?.error || "Update failed");
+  }
+};
+
+const handleLogout = () => {
+  localStorage.removeItem("email");
+  window.location.reload(); // or navigate("/")
+};
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -216,7 +237,7 @@ useEffect(() => {
                   <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="profile-form modern-form">
                     <div className="form-grid">
                       <div className="form-group"><label>Full Name</label><input type="text" name="name" value={profileData.name} onChange={handleInputChange} required /></div>
-                      <div className="form-group"><label>Email</label><input type="email" name="email" value={profileData.email} onChange={handleInputChange} required /></div>
+                      <div className="form-group"><label>Email</label><input type="email" name="email" value={profileData.email} onChange={handleInputChange} disabled /></div>
                       <div className="form-group"><label>Contact Number</label><input type="tel" name="contact" value={profileData.contact} onChange={handleInputChange} /></div>
                       <div className="form-group"><label>Age</label><input type="number" name="age" value={profileData.age} onChange={handleInputChange} /></div>
                       <div className="form-group"><label>Date of Birth</label><input type="date" name="dob" value={profileData.dob} onChange={handleInputChange} /></div>
@@ -255,7 +276,7 @@ useEffect(() => {
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td>{item.predicted_class || item.disease}</td>
-                      <td>{item.confidence ? `${item.confidence}%` : "-"}</td>
+                      <td>{item.severity ? `${item.severity}` : "-"}</td>
                       <td>{item.timestamp ? new Date(item.timestamp).toLocaleString() : "-"}</td>
                     </tr>
                   ))}

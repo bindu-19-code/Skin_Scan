@@ -45,6 +45,7 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
     });
 
     if (res.data && res.data.success) {
+      localStorage.setItem("email", email);
       alert("Registration successful!");
       setIsLoggedIn(true);
       onClose();
@@ -61,18 +62,24 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
 
 
   // ✅ Login existing user
-  const loginHandler = async () => {
-    try {
-      await axios.post("http://localhost:5000/login", { email, password });
-      alert("Login successful!");
-      setIsLoggedIn(true);
-      onClose();
-      navigate("/"); // ✅ redirect to home after login
-    } catch (err) {
-      console.error(err);
-      alert("Invalid login credentials");
+const loginHandler = async () => {
+  try {
+    const res = await axios.post("http://localhost:5000/login", { email, password });
+
+    if (res.data.email) {
+      localStorage.setItem("email", res.data.email);  // ✅ Save email for profile fetching
     }
-  };
+
+    alert("Login successful!");
+    setIsLoggedIn(true);
+    onClose();
+    navigate("/"); // Redirect to home after login
+  } catch (err) {
+    console.error(err);
+    alert("Invalid login credentials");
+  }
+};
+
 
   return (
     <div className={`auth-overlay ${isOpen ? "open" : ""}`}>
