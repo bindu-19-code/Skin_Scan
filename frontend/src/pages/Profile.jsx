@@ -32,7 +32,7 @@ useEffect(() => {
     dob: "",
     gender: "",
     address: "",
-    familyHistory: "",
+    medicalHistory: "",
   });
 
   const [showResetForm, setShowResetForm] = useState(false);
@@ -113,7 +113,7 @@ useEffect(() => {
         dob: data.dob || "",
         gender: data.gender || "",
         address: data.address || "",
-        familyHistory: data.familyHistory || ""
+        medicalHistory: data.medicalHistory || ""
       });
     })
     .catch(err => console.error(err));
@@ -159,7 +159,7 @@ const handleSave = async () => {
     dob: profileData.dob,
     gender: profileData.gender,
     address: profileData.address,
-    familyHistory: profileData.familyHistory
+    History: profileData.History
   };
 
   try {
@@ -229,7 +229,7 @@ const handleLogout = () => {
                       <div className="info-item"><span className="info-label">Date of Birth</span><span className="info-value">{profileData.dob}</span></div>
                       <div className="info-item"><span className="info-label">Gender</span><span className="info-value">{profileData.gender}</span></div>
                       <div className="info-item full"><span className="info-label">Address</span><span className="info-value">{profileData.address}</span></div>
-                      <div className="info-item full"><span className="info-label">Family History</span><span className="info-value">{profileData.familyHistory}</span></div>
+                      <div className="info-item full"><span className="info-label"> History</span><span className="info-value">{profileData.History}</span></div>
                     </div>
                     <button className="edit-profile-btn" onClick={() => setIsEditing(true)}>Edit Profile</button>
                   </div>
@@ -250,7 +250,7 @@ const handleLogout = () => {
                         </select>
                       </div>
                       <div className="form-group full"><label>Address</label><input type="text" name="address" value={profileData.address} onChange={handleInputChange} /></div>
-                      <div className="form-group full"><label>Family History</label><textarea name="familyHistory" value={profileData.familyHistory} onChange={handleInputChange}></textarea></div>
+                      <div className="form-group full"><label> History</label><textarea name="History" value={profileData.History} onChange={handleInputChange}></textarea></div>
                     </div>
                     <div className="button-group">
                       <button type="submit" className="save-btn">{loading ? "Saving..." : "Save"}</button>
@@ -269,7 +269,7 @@ const handleLogout = () => {
             {history.length > 0 ? (
               <table className="history-table">
                 <thead>
-                  <tr><th>#</th><th>Disease Name</th><th>Confidence</th><th>Date</th></tr>
+                  <tr><th>#</th><th>Disease Name</th><th>Severity</th><th>Date</th></tr>
                 </thead>
                 <tbody>
                   {history.map((item, index) => (

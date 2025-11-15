@@ -126,7 +126,7 @@ body {
   bottom: 0;
   left: 50%;
   width: 4px;
-  background: #ccc;
+  background: #cccccc00;
   transform: translateX(-50%);
   border-radius: 2px;
   border-left: 2px dashed #999;
@@ -278,7 +278,7 @@ body {
 .navbar {
   width: 100%;
   background: linear-gradient(90deg, #16957c, #0f6a58, #2c3e50);
-  padding: 16px 40px;
+  padding: 12px 40px;    /* small navbar height */
   position: fixed;
   top: 0;
   left: 0;
@@ -293,13 +293,19 @@ body {
   max-width: 1200px;
   display: flex;
   justify-content: space-between;
+  align-items: center;   /* perfect vertical alignment */
+}
+
+.logo-container {
+  display: flex;
   align-items: center;
 }
 
-.logo {
-  color: #ffffff;
-  font-size: 24px;
-  font-weight: 700;
+.logo-img {
+  height: 55px;     /* bigger logo */
+  width: 200px;
+  object-fit: cover;
+  cursor: pointer;
 }
 
 /* NAV LINKS */
@@ -316,6 +322,7 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 18px;
 }
 
 /* underline hover animation */
@@ -1097,14 +1104,14 @@ body {
   top: 20px;
   right: 25px;
   font-size: 1.8rem;
-  color: #0f6a58;
+  color: #044e3f;
   background: none;
   border: none;
   cursor: pointer;
   transition: transform 0.3s ease, color 0.3s ease;
 }
 .close-btn:hover {
-  color: #16957c;
+  color: #10715e;
   transform: rotate(90deg);
 }
 
@@ -1152,13 +1159,14 @@ body {
   border-radius: 8px;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(90deg, #16957c, #0f6a58, #2c3e50);
+  background: #08614f;
   box-shadow: 0 4px 12px rgba(22, 149, 124, 0.4);
   transition: all 0.3s ease-in-out;
 }
 
 .auth-section button:hover {
   transform: translateY(-2px);
+  background: #278e79;
   box-shadow: 0 6px 16px rgba(22, 149, 124, 0.6);
 }
 
@@ -1206,7 +1214,7 @@ body {
   font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #0f6a58;
+  color: #196757;
   background: linear-gradient(90deg, #16957c, #0f6a58, #2c3e50);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1236,10 +1244,11 @@ body {
   border-radius: 16px;
   text-align: center;
   font-family: "Poppins", sans-serif;
+  margin-top: 100px;
 }
 
 .disease-detection-container h2 {
-  color: #2e7d32;
+  color: #18694a;
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 20px;
@@ -1250,7 +1259,7 @@ body {
 }
 
 .file-upload input[type="file"] {
-  border: 2px dashed #66bb6a;
+  border: 2px dashed #118154;
   padding: 15px;
   border-radius: 12px;
   cursor: pointer;
@@ -1270,7 +1279,7 @@ body {
 }
 
 button {
-  background: #2e7d32;
+  background: #138677;
   color: #fff;
   border: none;
   padding: 10px 18px;
@@ -1282,7 +1291,7 @@ button {
 }
 
 button:hover {
-  background: #1b5e20;
+  background: #12563e;
 }
 
 .result-card {
@@ -1325,6 +1334,8 @@ button:hover {
   border-radius: 8px;
   border: 1px solid #ccc;
   width: 70%;
+  margin-right: 15px;
+  margin-bottom: 10px;
 }
 
 .location-section ul {

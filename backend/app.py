@@ -226,7 +226,7 @@ def update_user():
                 "dob": data.get("dob"),
                 "gender": data.get("gender"),
                 "address": data.get("address"),
-                "familyHistory": data.get("familyHistory")
+                "medicalHistory": data.get("medicalHistory")
             }},
             upsert=True
         )

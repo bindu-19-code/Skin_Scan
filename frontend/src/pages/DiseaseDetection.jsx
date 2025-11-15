@@ -113,12 +113,32 @@ const handleDownloadPDF = () => {
   const doc = new jsPDF();
   let y = 10;
 
-  doc.setFontSize(18);
-  doc.text("Skin Disease Detection Report", 10, y);
-  y += 12;
+  // ✅ Add Logo (Adjust path if needed)
+  const logo = "/images/icon2.png"; // since it's inside public/images folder
+  doc.addImage(logo, "PNG", 10, y, 20, 20);
 
-  doc.setFontSize(13);
-  doc.text("Patient Details:", 10, (y += 8));
+  // Title beside logo
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("SkinScan Diagnostic Report", 40, y + 10);
+  doc.setLineWidth(0.5);
+  doc.line(10, y + 22, 200, y + 22);
+  y += 30;
+
+  // Date
+  const today = new Date().toLocaleString();
+  doc.setFontSize(10);
+  doc.text(`Generated: ${today}`, 150, y);
+  y += 10;
+
+  // ✅ Patient Details
+  doc.setFont("Times New Roman", "bold");
+  doc.setFontSize(14);
+  doc.text("Patient Details", 10, y);
+  y += 8;
+
+  doc.setFont("Times New Roman", "normal");
+  doc.setFontSize(11);
 
   if (profile) {
     const fields = [
@@ -128,50 +148,75 @@ const handleDownloadPDF = () => {
       `Age: ${profile.age || "N/A"}`,
       `Gender: ${profile.gender || "N/A"}`,
       `Address: ${profile.address || "N/A"}`,
-      `Medical History: ${profile.familyHistory || "N/A"}`
+      `Medical History: ${profile.medicalHistory || "N/A"}`
     ];
 
     fields.forEach((field) => {
-      doc.text(field, 10, (y += 8));
+      doc.text(field, 10, y);
+      y += 7;
     });
-
-    y += 5;
   }
+
+  y += 3;
+  doc.setFont("Times New Roman", "bold");
+  doc.setFontSize(14);
+  doc.text("Diagnosis Summary", 10, y);
+  y += 10;
 
   if (result) {
-    doc.setFontSize(13);
-    doc.text("Diagnosis Details:", 10, (y += 10));
-    doc.text(`Disease: ${result.name}`, 10, (y += 8));
-    doc.text(`Severity: ${result.severity}`, 10, (y += 8));
+    doc.setFont("Times New Roman", "normal");
+    doc.setFontSize(12);
+    doc.text(`Disease: ${result.name}`, 10, y);
+    y += 7;
 
-    doc.text("Description:", 10, (y += 8));
-    doc.setFontSize(11);
-    const splitDesc = doc.splitTextToSize(result.description, 180);
-    doc.text(splitDesc, 10, (y += 8));
-    y += splitDesc.length * 4;
+    doc.text(`Severity: ${result.severity}`, 10, y);
+    y += 7;
 
-    doc.setFontSize(13);
-    doc.text("Doctor Suggestions:", 10, (y += 10));
-    doc.setFontSize(11);
+    doc.setFont("Times New Roman", "bold");
+    doc.text("Description:", 10, y);
+    y += 6;
 
-    result.suggestions.forEach((s) => {
-      const clean = s.replace(/^\* ?/, "");
-      const splitText = doc.splitTextToSize(`- ${clean}`, 180);
-      doc.text(splitText, 12, (y += 8));
-      y += splitText.length * 4;
+    doc.setFont("Times New Roman", "normal");
+    const descText = doc.splitTextToSize(result.description, 180);
+    doc.text(descText, 10, y);
+    y += descText.length * 6 + 4;
+
+    // Suggestions
+    doc.setFont("Times New Roman", "bold");
+    doc.text("Suggestions:", 10, y);
+    y += 8;
+
+    doc.setFont("Times New Roman", "normal");
+    result.suggestions.forEach((s, i) => {
+      const suggestion = `• ${s.replace(/^\* ?/, "")}`;
+      const splitSugg = doc.splitTextToSize(suggestion, 180);
+      doc.text(splitSugg, 12, y);
+      y += splitSugg.length * 6;
     });
   }
 
-  // Include uploaded image
+  // ✅ Add uploaded image as thumbnail
   if (selectedFile) {
     const reader = new FileReader();
     reader.onload = function (event) {
-      doc.addImage(event.target.result, "JPEG", 145, 20, 50, 50);
-      doc.save("Skin_Disease_Report.pdf");
+      const imgWidth = 40;
+      const imgHeight = 40;
+      doc.addImage(event.target.result, "JPEG", 150, 45, imgWidth, imgHeight);
+
+      addFooterAndSave();
     };
     reader.readAsDataURL(selectedFile);
   } else {
-    doc.save("Skin_Disease_Report.pdf");
+    addFooterAndSave();
+  }
+
+  function addFooterAndSave() {
+    // ✅ Footer
+    doc.setFontSize(10);
+    doc.setTextColor("#666666");
+    doc.text("SkinScan © 2025 — All Rights Reserved", 70, 285);
+
+    doc.save("SkinScan_Report.pdf");
   }
 };
 

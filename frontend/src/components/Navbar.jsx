@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Auth from "./Auth";
 
 function Navbar({ isLoggedIn, setIsLoggedIn }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authType, setAuthType] = useState(null);
+  const navigate = useNavigate();
 
-  // ✅ Check login only once when component mounts
+  // Check login only once when component mounts
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) setIsLoggedIn(true);
@@ -21,12 +22,33 @@ function Navbar({ isLoggedIn, setIsLoggedIn }) {
 
   const closeAuth = () => setAuthType(null);
 
+  // Scroll to section
+  const handleScroll = (sectionId) => {
+    setMenuOpen(false); // close mobile menu
+
+    if (window.location.pathname !== "/") {
+      navigate("/", { replace: false });
+      setTimeout(() => {
+        const section = document.getElementById(sectionId);
+        section?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } else {
+      const section = document.getElementById(sectionId);
+      section?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <>
       <nav className="navbar">
         <div className="navbar-container">
-          <h2 className="logo">SkinScan</h2>
-
+<Link to="/" className="logo-container">
+  <img
+    src="/images/logo.png"
+    alt="SkinScan Logo"
+    className="logo-img"
+  />
+</Link>
           {/* Hamburger menu for mobile */}
           <div className="hamburger" onClick={toggleMenu}>
             <div className={`bar ${menuOpen ? "bar1" : ""}`}></div>
@@ -37,13 +59,19 @@ function Navbar({ isLoggedIn, setIsLoggedIn }) {
           {/* Navbar Links */}
           <ul className={`nav-links ${menuOpen ? "active" : ""}`}>
             <li>
-              <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
+              <Link to="/" onClick={() => setMenuOpen(false)}>
+                Home
+              </Link>
             </li>
             <li>
-              <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+              <span onClick={() => handleScroll("features")} className="nav-link">
+                Features
+              </span>
             </li>
             <li>
-              <a href="#howitworks" onClick={() => setMenuOpen(false)}>How It Works</a>
+              <span onClick={() => handleScroll("howitworks")} className="nav-link">
+                How It Works
+              </span>
             </li>
 
             {!isLoggedIn ? (
@@ -54,7 +82,10 @@ function Navbar({ isLoggedIn, setIsLoggedIn }) {
             ) : (
               <>
                 <li>
-                  <Link to="/disease-detection" onClick={() => setMenuOpen(false)}>
+                  <Link
+                    to="/disease-detection"
+                    onClick={() => setMenuOpen(false)}
+                  >
                     Disease Detection
                   </Link>
                 </li>
