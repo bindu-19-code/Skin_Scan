@@ -491,10 +491,20 @@ def home():
     return jsonify({"status": "Backend is running"}), 200
 
 @app.after_request
-def add_cors_headers(response):
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+def apply_cors(response):
+    origin = request.headers.get("Origin")
+
+    allowed_origins = [
+        "http://localhost:3000",
+        "https://skin-scan.netlify.app"
+    ]
+
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
 # ====================================
