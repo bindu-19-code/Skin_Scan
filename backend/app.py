@@ -30,7 +30,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "https://skin-scan.netlify.app"],
+        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://skin-scan.netlify.app"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -489,6 +489,13 @@ def reset_password():
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"status": "Backend is running"}), 200
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    return response
 
 # ====================================
 # Run Flask app
