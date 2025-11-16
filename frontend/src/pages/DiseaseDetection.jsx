@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
+import API from "../api";
 
 function DiseaseDetection() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -16,7 +17,7 @@ useEffect(() => {
   const email = localStorage.getItem("email");
   if (!email) return;
 
-  axios.get(`http://127.0.0.1:5000/api/profile?email=${email}`)
+  axios.get(`${API}/api/profile?email=${email}`)
     .then(res => {
       console.log("Profile:", res.data);
       setProfile(res.data);
@@ -46,7 +47,7 @@ useEffect(() => {
       setResult(null);
 
       const response = await axios.post(
-        "http://127.0.0.1:5000/predict",
+        `${API}/predict`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -59,7 +60,7 @@ useEffect(() => {
 
       if (email) {
         try {
-          await axios.post("http://127.0.0.1:5000/save-history", {
+          await axios.post(`${API}/save-history`, {
             email: email,
             disease: response.data.predicted_class.name,
             severity: response.data.severity || null
@@ -98,7 +99,7 @@ const handleSearchDermatologists = async () => {
   
   try {
     const response = await axios.get(
-      `http://127.0.0.1:5000/find-dermatologists?city=${location}`
+      `${API}/find-dermatologists?city=${location}`
     );
     console.log("Dermatologists:", response.data);
     setDermatologists(response.data);

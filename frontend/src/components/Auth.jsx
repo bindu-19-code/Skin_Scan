@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
+import API from "../api";
 
 const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
   const [step, setStep] = useState("login"); // login, register, verify-otp, set-password
@@ -15,7 +16,7 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
   // ✅ Send OTP for registration
   const sendOtpHandler = async () => {
     try {
-      await axios.post("http://localhost:5000/send-otp", { email });
+      await axios.post(`${API}/send-otp`, { email });
       alert("OTP sent to your email!");
       setStep("verify-otp");
     } catch (err) {
@@ -27,7 +28,7 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
   // ✅ Verify OTP
   const verifyOtpHandler = async () => {
     try {
-      await axios.post("http://localhost:5000/verify-otp", { email, otp });
+      await axios.post(`${API}/verify-otp`, { email, otp });
       alert("OTP verified!");
       setStep("set-password");
     } catch (err) {
@@ -39,7 +40,7 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
   // ✅ Set password after OTP verification
   const setPasswordHandler = async () => {
   try {
-    const res = await axios.post("http://localhost:5000/set-password", {
+    const res = await axios.post(`${API}/set-password`, {
       email,
       password,
     });
@@ -64,7 +65,7 @@ const Auth = ({ isOpen, onClose, setIsLoggedIn }) => {
   // ✅ Login existing user
 const loginHandler = async () => {
   try {
-    const res = await axios.post("http://localhost:5000/login", { email, password });
+    const res = await axios.post(`${API}/login`, { email, password });
 
     if (res.data.email) {
       localStorage.setItem("email", res.data.email);  // ✅ Save email for profile fetching

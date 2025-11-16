@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "../App.css";
+import API from "../api";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -29,7 +30,7 @@ const ResetPassword = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/reset-password", {
+      await axios.post(`${API}/reset-password`, {
         email,
         token,
         newPassword: password, // backend expects 'newPassword'

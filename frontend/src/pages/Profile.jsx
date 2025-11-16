@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation } from "react-router-dom"; // ✅ Added useLocation import
 import "../App.css";
+import API from "../api";
 
 function Profile({ userEmail }) {
   const location = useLocation(); // ✅ Added this
@@ -56,7 +57,7 @@ useEffect(() => {
       return;
     }
     try {
-      await axios.post("http://localhost:5000/reset-password", {
+      await axios.post(`${API}/reset-password`, {
         email,
         token,
         newPassword: password, // backend expects this
@@ -102,7 +103,7 @@ useEffect(() => {
   const email = localStorage.getItem("email");
   if (!email) return;
 
-  fetch(`http://localhost:5000/api/user/${email}`)
+  fetch(`${API}/api/user/${email}`)
     .then(res => res.json())
     .then(data => {
       setProfileData({
@@ -128,7 +129,7 @@ useEffect(() => {
     return;
   }
 
-  fetch(`http://127.0.0.1:5000/get-history?email=${email}`)
+  fetch(`${API}/get-history?email=${email}`)
     .then((res) => res.json())
     .then((data) => {
       if (Array.isArray(data)) {
@@ -163,7 +164,7 @@ const handleSave = async () => {
   };
 
   try {
-    await axios.post("http://localhost:5000/update-user", bodyData);
+    await axios.post(`${API}/update-user`, bodyData);
     alert("Profile updated successfully!");
     setIsEditing(false);
   } catch (err) {
@@ -180,7 +181,7 @@ const handleLogout = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/send-reset-link", {
+      const res = await axios.post(`${API}/send-reset-link`, {
         email: resetEmail,
       });
       setResetMessage(res.data.message);
