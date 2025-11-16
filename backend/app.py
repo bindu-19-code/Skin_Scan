@@ -432,7 +432,13 @@ def send_reset_link():
         reset_tokens[email] = {"token": token, "expires": datetime.now() + timedelta(minutes=10)}
 
         # Reset link (inside profile/settings/reset-password)
-        reset_link = f"http://localhost:3000/profile?token={token}&email={email}"
+        origin = request.headers.get("Origin")
+        if origin:
+            frontend_url = origin
+        else:
+            frontend_url = "http://localhost:3000"
+
+        reset_link = f"{frontend_url}/profile?token={token}&email={email}"
 
         # Send HTML email
         msg = Message("Password Reset Request", sender=app.config["MAIL_USERNAME"], recipients=[email])
@@ -505,6 +511,7 @@ def apply_cors(response):
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Credentials"] = "true"
+
     return response
 
 # ====================================
