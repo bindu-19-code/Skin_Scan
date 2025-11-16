@@ -30,7 +30,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": "http://localhost:3000",
+        "origins": ["http://localhost:3000", "https://skin-scan.netlify.app"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True
     }
