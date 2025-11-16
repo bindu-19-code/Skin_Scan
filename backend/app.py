@@ -485,7 +485,9 @@ def reset_password():
         print("Error resetting password:", e)
         return jsonify({"error": str(e)}), 500
 
-
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "Backend is running"}), 200
 
 # ====================================
 # Run Flask app
