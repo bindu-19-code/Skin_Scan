@@ -20,12 +20,17 @@ from models import User
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from werkzeug.security import check_password_hash
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 # ====================================
 # Load environment variables
 # ====================================
 load_dotenv()
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+MAIL_FROM = os.getenv("MAIL_FROM")
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -442,38 +447,42 @@ def send_reset_link():
         token = ''.join(random.choices(string.ascii_letters + string.digits, k=40))
         reset_tokens[email] = {"token": token, "expires": datetime.now() + timedelta(minutes=10)}
 
-        # Reset link (inside profile/settings/reset-password)
-        origin = request.headers.get("Origin")
-        if origin:
-            frontend_url = origin
-        else:
-            frontend_url = "http://localhost:3000"
+        # Build frontend reset link
+        origin = request.headers.get("Origin") or "http://localhost:3000"
+        reset_link = f"{origin}/profile?token={token}&email={email}"
 
-        reset_link = f"{frontend_url}/profile?token={token}&email={email}"
+        # Send email via SendGrid
+        message = Mail(
+            from_email=MAIL_FROM,
+            to_emails=email,
+            subject="Password Reset Request",
+            html_content=f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h3>Password Reset Request</h3>
+                <p>We received a request to reset your password for your SkinScan account.</p>
+                <p>
+                    <a href="{reset_link}" style="background-color: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+                        Click here to reset your password
+                    </a>
+                </p>
+                <p>This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
+                <p>Best regards,<br>SkinScan Team</p>
+            </body>
+            </html>
+            """
+        )
 
-        # Send HTML email
-        msg = Message("Password Reset Request", sender=app.config["MAIL_USERNAME"], recipients=[email])
-        msg.html = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <h3>Password Reset Request</h3>
-            <p>We received a request to reset your password for your SkinScan account.</p>
-            <p>
-                <a href="{reset_link}" style="background-color: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
-                    Click here to reset your password
-                </a>
-            </p>
-            <p>This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-            <p>Best regards,<br>SkinScan Team</p>
-        </body>
-        </html>
-        """
-        mail.send(msg)
-        print(f"📩 Reset link sent: {reset_link}")
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"📩 Reset link sent: {reset_link} (Status: {response.status_code})")
+
         return jsonify({"message": "Reset link sent to your email"}), 200
+
     except Exception as e:
         print("Error sending reset link:", e)
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route("/reset-password", methods=["POST"])
