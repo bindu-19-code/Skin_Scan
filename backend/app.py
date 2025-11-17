@@ -30,12 +30,22 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://skin-scan.netlify.app"],
+        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://skin-scan.netlify.app", "http://10.171.26.117:3000"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
 })
+
+@app.before_request
+def handle_options():
+    if request.method == "OPTIONS":
+        response = app.make_default_options_response()
+        response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin")
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
 
 # Configure with your key
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -519,4 +529,4 @@ def apply_cors(response):
 # ====================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
