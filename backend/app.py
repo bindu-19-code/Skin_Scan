@@ -119,7 +119,6 @@ history_collection = db["history"]
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USE_SSL"] = False
 app.config["MAIL_USERNAME"] = os.environ.get("EMAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
 mail = Mail(app)
@@ -452,31 +451,30 @@ def send_reset_link():
         reset_link = f"{origin}/profile?token={token}&email={email}"
 
         # Send email via SendGrid
-        message = Mail(
-            from_email=MAIL_FROM,
-            to_emails=email,
+        # Send email via Gmail SMTP
+        msg = Message(
             subject="Password Reset Request",
-            html_content=f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h3>Password Reset Request</h3>
-                <p>We received a request to reset your password for your SkinScan account.</p>
-                <p>
-                    <a href="{reset_link}" style="background-color: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
-                        Click here to reset your password
-                    </a>
-                </p>
-                <p>This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-                <p>Best regards,<br>SkinScan Team</p>
-            </body>
-            </html>
-            """
+            sender=app.config["MAIL_USERNAME"],
+            recipients=[email]
         )
+        msg.html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h3>Password Reset Request</h3>
+            <p>We received a request to reset your password for your SkinScan account.</p>
+            <p>
+                <a href="{reset_link}" style="background-color: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+                    Click here to reset your password
+                </a>
+            </p>
+            <p>This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
+            <p>Best regards,<br>SkinScan Team</p>
+        </body>
+        </html>
+        """
 
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        print(f"📩 Reset link sent: {reset_link} (Status: {response.status_code})")
-
+        mail.send(msg)
+        print(f"📩 Reset link sent: {reset_link}")
         return jsonify({"message": "Reset link sent to your email"}), 200
 
     except Exception as e:
