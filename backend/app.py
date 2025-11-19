@@ -55,9 +55,7 @@ def handle_options():
 # Configure with your key
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# List all models available
-for model in genai.list_models():
-    print(model.name)
+print("Gemini Ready.")
 
 # ====================================
 # ML Model
