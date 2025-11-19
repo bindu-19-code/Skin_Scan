@@ -1,7 +1,7 @@
 // src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useLocation } from "react-router-dom"; // ✅ Added useLocation import
+import { useLocation, useNavigate } from "react-router-dom"; // ✅ Added useLocation import
 import "../App.css";
 import API from "../api";
 
@@ -11,6 +11,7 @@ function Profile({ userEmail }) {
   const [loading] = useState(false);
   const [history, setHistory] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
 
   // ✅ Token detection from reset link
   // ✅ Token detection from reset link
@@ -99,35 +100,34 @@ useEffect(() => {
 };
 
   // ✅ Fetch profile info
-useEffect(() => {
-  const email = localStorage.getItem("email");
-  if (!email) return;
+// 🔥 Add this function to fix the error
+const fetchProfile = async (email) => {
+  try {
+    const res = await fetch(`${API}/api/user/${email}`);
+    const data = await res.json();
 
-  fetch(`${API}/api/user/${email}`)
-    .then(res => res.json())
-    .then(data => {
-      setProfileData({
-        name: data.name || "",
-        email: data.email || "",
-        contact: data.contact || "",
-        age: data.age || "",
-        dob: data.dob || "",
-        gender: data.gender || "",
-        address: data.address || "",
-        medicalHistory: data.medicalHistory || ""
-      });
-    })
-    .catch(err => console.error(err));
-}, []);
+    setProfileData({
+      name: data.name || "",
+      email: data.email || "",
+      contact: data.contact || "",
+      age: data.age || "",
+      dob: data.dob || "",
+      gender: data.gender || "",
+      address: data.address || "",
+      medicalHistory: data.medicalHistory || "",
+    });
+  } catch (err) {
+    console.error("Error fetching profile:", err);
+  }
+};
 
 
   // ✅ Fetch detection history
 useEffect(() => {
   const email = localStorage.getItem("email");
-  if (!email) {
-    console.error("No email found in localStorage");
-    return;
-  }
+  if (!email) return;    // stop running if not logged in
+
+  fetchProfile(email);
 
   fetch(`${API}/get-history?email=${email}`)
     .then((res) => res.json())
@@ -174,8 +174,13 @@ const handleSave = async () => {
 };
 
 const handleLogout = () => {
+  localStorage.removeItem("token");
   localStorage.removeItem("email");
-  window.location.reload(); // or navigate("/")
+  localStorage.removeItem("userId");
+
+  // If you store anything else, remove it too
+  navigate("/login");
+  window.location.reload();  // force reload so UI updates
 };
 
   const handleResetPassword = async (e) => {
@@ -276,7 +281,7 @@ const handleLogout = () => {
                   {history.map((item, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td>{item.predicted_class || item.disease}</td>
+                      <td>{item.disease}</td>
                       <td>{item.severity ? `${item.severity}` : "-"}</td>
                       <td>{item.timestamp ? new Date(item.timestamp).toLocaleString() : "-"}</td>
                     </tr>

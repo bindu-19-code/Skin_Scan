@@ -11,6 +11,7 @@ function DiseaseDetection() {
   const [location, setLocation] = useState("");
   const [dermatologists, setDermatologists] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [symptoms, setSymptoms] = useState("");
 
   // Fetch user profile info (assuming JWT or userId stored)
 useEffect(() => {
@@ -40,6 +41,7 @@ useEffect(() => {
 
     const formData = new FormData();
     formData.append("image", selectedFile);
+    formData.append("symptoms", symptoms);
 
     try {
       setLoading(true);
@@ -54,7 +56,7 @@ useEffect(() => {
 
       console.log("✅ Backend response:", response.data);
 
-      if (response.data && response.data.predicted_class) {
+      if (response.data && response.data.disease) {
         // ✅ Save detection history after successful prediction
       const email = localStorage.getItem("email");
 
@@ -71,8 +73,8 @@ useEffect(() => {
         }
       }
         setResult({
-          name: response.data.predicted_class.name,
-          description: response.data.predicted_class.description,
+          name: response.data.disease,
+          description: response.data.description,
           severity: response.data.severity,
           suggestions: response.data.suggestions || [
             "Keep affected area clean.",
@@ -228,6 +230,20 @@ return (
     <form onSubmit={handleSubmit} className="file-upload">
       <input type="file" accept="image/*" onChange={handleFileChange} />
       <br />
+      <textarea
+        placeholder="Describe your symptoms (itching, burning, pain, duration, etc.)"
+        value={symptoms}
+        onChange={(e) => setSymptoms(e.target.value)}
+        className="symptoms-box"
+        rows="4"
+        style={{
+          width: "100%",
+          marginTop: "10px",
+          padding: "10px",
+          borderRadius: "8px",
+          border: "1px solid #ccc"
+        }}
+      ></textarea>
       <button type="submit">Upload & Predict</button>
     </form>
 

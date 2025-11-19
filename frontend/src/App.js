@@ -11,7 +11,9 @@ import ResetPassword from './pages/ResetPassword';
 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+  !!localStorage.getItem("token")
+);
   const [authOpen, setAuthOpen] = useState(false); // controls slide visibility
 
   const openAuth = () => setAuthOpen(true);

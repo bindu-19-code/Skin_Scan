@@ -289,69 +289,105 @@ def predict():
     try:
         email = request.form.get("email")
 
+        # -------------------------------
+        # Step 1: Receive Image + Symptoms
+        # -------------------------------
         if "image" not in request.files:
             return jsonify({"error": "No image uploaded"}), 400
 
         file = request.files["image"]
+        symptoms_text = request.form.get("symptoms", "")
+
+        # -------------------------------
+        # Step 2: CNN Prediction
+        # -------------------------------
         img = Image.open(file).convert("RGB").resize((128, 128))
         img_array = np.expand_dims(np.array(img) / 255.0, axis=0)
 
         preds = model.predict(img_array)
         pred_index = int(np.argmax(preds[0]))
         predicted_class = class_labels[pred_index] if pred_index < len(class_labels) else "Unknown"
-        confidence = round(float(np.max(preds[0])), 4)
-        severity = analyze_severity(img_array[0])
-        risk = assess_risk()
 
-        # 🧠 Ask Gemini for AI suggestions
+        severity = analyze_severity(img_array[0])
+
+        # -------------------------------
+        # Step 3: SINGLE Gemini Request
+        # -------------------------------
         try:
             prompt = f"""
-            You are a dermatology assistant AI.
-            Provide 3 short, safe, and practical self-care suggestions for a skin disease.
-            Disease: {predicted_class}
-            Severity: {severity}
-            Avoid giving harmful medical advice or prescribing medications.
-            Each suggestion should be one line.
-            """
+You are a dermatology assistant. Return STRICTLY a JSON object. No extra text.
 
-            model_ai = genai.GenerativeModel("gemini-2.5-pro")
+Use:
+- CNN prediction: {predicted_class}
+- User symptoms: {symptoms_text}
+
+Analyze and produce the FINAL disease name and full details.
+
+Return ONLY JSON in this exact format:
+
+{{
+  "disease": "",
+  "severity": "",
+  "description": "",
+  "suggestions": ["", ""]
+}}
+"""
+
+            model_ai = genai.GenerativeModel("gemini-2.0-flash")
             response = model_ai.generate_content(prompt)
 
-            suggestions_text = response.text.strip()
-            suggestions = [s.strip("•- \n") for s in suggestions_text.split("\n") if s.strip()]
+            # Extract response safely
+            raw_text = ""
+            if hasattr(response, "text") and response.text:
+                raw_text = response.text
+            else:
+                for cand in response.candidates:
+                    for part in cand.content.parts:
+                        if hasattr(part, "text"):
+                            raw_text += part.text
+
+            print("GEMINI RAW OUTPUT:", raw_text)
+
+            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+
+            import re
+            json_match = re.search(r"{.*}", raw_text, re.DOTALL)
+            if json_match:
+                final_result = json.loads(json_match.group(0))
+            else:
+                raise ValueError("JSON not found")
 
         except Exception as ai_error:
-            print("AI suggestion error:", ai_error)
-            suggestions = [
-                "Keep the affected area clean and dry.",
-                "Avoid harsh products or scratching.",
-                "Consult a dermatologist if symptoms persist."
-            ]
+            print("Gemini AI error:", ai_error)
 
-        # ✅ Final result object
-        result = {
-            "predicted_class": predicted_class,
-            "confidence": confidence,
-            "severity": severity,
-            "risk": risk,
-            "suggestions": suggestions,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+            # FALLBACK if Gemini fails — never break UI
+            final_result = {
+                "disease": predicted_class,
+                "severity": severity,
+                "description": "AI service temporarily unavailable. Using CNN prediction only.",
+                "suggestions": [
+                    "Keep the skin clean.",
+                    "Avoid using harsh chemical products.",
+                    "Visit a dermatologist if symptoms increase."
+                ]
+            }
 
-        # Save to MongoDB (optional)
+        # -------------------------------
+        # Step 4: Save detection history
+        # -------------------------------
         if email:
             users_col.update_one(
                 {"email": email},
-                {"$push": {"detection_history": result}},
+                {"$push": {"detection_history": final_result}},
                 upsert=True
             )
 
-        return jsonify(result)
+        # Always return JSON in same structure
+        return jsonify(final_result)
 
     except Exception as e:
         print("Prediction error:", e)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/get-history", methods=["GET"])
 def get_history():
@@ -374,7 +410,7 @@ def save_history():
 
     history_entry = {
         "email": email,
-        "predicted_class": disease,
+        "disease": disease,
         "severity": severity,
         "timestamp": datetime.utcnow()
     }
