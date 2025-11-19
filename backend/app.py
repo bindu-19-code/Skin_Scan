@@ -163,13 +163,27 @@ def verify_otp():
     data = request.get_json()
     email = data.get("email")
     otp = data.get("otp")
+
     if not email or not otp:
         return jsonify({"success": False, "message": "Email and OTP required"}), 400
-    if otp_store.get(email) == otp:
+
+    # Check if OTP exists
+    record = otp_store.get(email)
+    if not record:
+        return jsonify({"success": False, "message": "OTP expired or not found"}), 400
+
+    # Check expiration
+    if datetime.now() > record["expires"]:
         del otp_store[email]
-        return jsonify({"success": True, "message": "OTP verified successfully"}), 200
-    else:
+        return jsonify({"success": False, "message": "OTP expired"}), 400
+
+    # Check OTP value
+    if record["otp"] != otp:
         return jsonify({"success": False, "message": "Invalid OTP"}), 400
+
+    # OTP matched → delete it
+    del otp_store[email]
+    return jsonify({"success": True, "message": "OTP verified successfully"}), 200
 
 
 # ====================================
