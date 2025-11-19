@@ -21,7 +21,7 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from werkzeug.security import check_password_hash
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Mail as SGMail
 
 
 # ====================================
@@ -116,12 +116,6 @@ history_collection = db["history"]
 # ====================================
 # Email setup
 # ====================================
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("EMAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("EMAIL_PASSWORD")
-mail = Mail(app)
 
 # Temporary store for OTPs and reset tokens
 otp_store = {}
@@ -132,21 +126,36 @@ reset_tokens = {}
 # ====================================
 @app.route("/send-otp", methods=["POST"])
 def send_otp():
-    data = request.get_json()
-    email = data.get("email")
-    if not email:
-        return jsonify({"message": "Email required"}), 400
-
-    otp = str(random.randint(100000, 999999))
-    otp_store[email] = otp
-
-    msg = Message("Your OTP Code", sender=app.config["MAIL_USERNAME"], recipients=[email])
-    msg.body = f"Your OTP code is {otp}. Valid for 5 minutes."
     try:
-        mail.send(msg)
+        data = request.get_json()
+        email = data.get("email")
+
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        # Generate OTP
+        otp = ''.join(random.choices(string.digits, k=6))
+        otp_store[email] = {"otp": otp, "expires": datetime.now() + timedelta(minutes=5)}
+
+        message = SGMail(
+            from_email=MAIL_FROM,
+            to_emails=email,
+            subject="Your SkinScan OTP Code",
+            html_content=f"""
+            <h2>Your OTP Code</h2>
+            <p><strong>{otp}</strong></p>
+            <p>This OTP is valid for 5 minutes.</p>
+            """
+        )
+
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(message)
+
         return jsonify({"message": "OTP sent successfully"}), 200
+
     except Exception as e:
-        return jsonify({"message": f"Failed to send OTP: {e}"}), 500
+        print("SendGrid Error:", e)
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/verify-otp", methods=["POST"])
@@ -442,46 +451,34 @@ def send_reset_link():
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Generate secure token
+        # Generate token
         token = ''.join(random.choices(string.ascii_letters + string.digits, k=40))
         reset_tokens[email] = {"token": token, "expires": datetime.now() + timedelta(minutes=10)}
 
-        # Build frontend reset link
         origin = request.headers.get("Origin") or "http://localhost:3000"
         reset_link = f"{origin}/profile?token={token}&email={email}"
 
-        # Send email via SendGrid
-        # Send email via Gmail SMTP
-        msg = Message(
+        # Send email using SendGrid
+        message = SGMail(
+            from_email=MAIL_FROM,
+            to_emails=email,
             subject="Password Reset Request",
-            sender=app.config["MAIL_USERNAME"],
-            recipients=[email]
+            html_content=f"""
+            <h3>Reset Your Password</h3>
+            <p>Click the link below to reset your password:</p>
+            <p><a href="{reset_link}">Reset Password</a></p>
+            <p>This link expires in 10 minutes.</p>
+            """
         )
-        msg.html = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <h3>Password Reset Request</h3>
-            <p>We received a request to reset your password for your SkinScan account.</p>
-            <p>
-                <a href="{reset_link}" style="background-color: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
-                    Click here to reset your password
-                </a>
-            </p>
-            <p>This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-            <p>Best regards,<br>SkinScan Team</p>
-        </body>
-        </html>
-        """
 
-        mail.send(msg)
-        print(f"📩 Reset link sent: {reset_link}")
-        return jsonify({"message": "Reset link sent to your email"}), 200
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(message)
+
+        return jsonify({"message": "Reset link sent"}), 200
 
     except Exception as e:
-        print("Error sending reset link:", e)
+        print("SendGrid Error:", e)
         return jsonify({"error": str(e)}), 500
-
-
 
 @app.route("/reset-password", methods=["POST"])
 def reset_password():
@@ -537,4 +534,4 @@ def apply_cors(response):
 # ====================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000,debug=True)
