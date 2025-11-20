@@ -281,7 +281,11 @@ const handleLogout = () => {
                   {history.map((item, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td>{item.disease}</td>
+                      <td>
+                        {typeof item.predicted_class === "string"
+                          ? item.predicted_class
+                          : item.predicted_class?.name || "Unknown"}
+                      </td>
                       <td>{item.severity ? `${item.severity}` : "-"}</td>
                       <td>{item.timestamp ? new Date(item.timestamp).toLocaleString() : "-"}</td>
                     </tr>

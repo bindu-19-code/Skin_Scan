@@ -64,7 +64,7 @@ useEffect(() => {
         try {
           await axios.post(`${API}/save-history`, {
             email: email,
-            disease: response.data.predicted_class.name,
+            disease: response.data.diseas?.name || response.data.disease,
             severity: response.data.severity || null
           });
           console.log("History saved!");
@@ -73,7 +73,7 @@ useEffect(() => {
         }
       }
         setResult({
-          name: response.data.disease,
+          name: response.data.disease?.name || response.data.disease || "Unknown Disease",
           description: response.data.description,
           severity: response.data.severity,
           suggestions: response.data.suggestions || [

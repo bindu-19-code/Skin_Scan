@@ -401,21 +401,26 @@ def get_history():
 @app.route('/save-history', methods=['POST'])
 def save_history():
     data = request.get_json()
+    print("Received data for history:", data)   # LOG HERE
+
     email = data.get("email")
     disease = data.get("disease")
     severity = data.get("severity")
 
     if not email or not disease:
+        print("Missing fields:", email, disease)
         return jsonify({"message": "Missing fields"}), 400
 
     history_entry = {
         "email": email,
-        "disease": disease,
+        "predicted_class": disease,
         "severity": severity,
         "timestamp": datetime.utcnow()
     }
 
+    print("Saving to DB:", history_entry)  # LOG
     db.history.insert_one(history_entry)
+
     return jsonify({"message": "History saved successfully"}), 200
 
 @app.route("/find-dermatologists", methods=["GET"])
